@@ -1,0 +1,105 @@
+.screen-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.screen-header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .screen-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.screen-title h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+
+.screen-title p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Tabs indicator */
+.tab-navigation {
+  display: flex;
+  gap: 8px;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 2px;
+}
+
+.tab-btn {
+  height: auto;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 15px;
+  padding: 12px 16px;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  position: relative;
+  top: 2px;
+}
+
+.tab-btn:hover {
+  background: transparent;
+  color: var(--primary-color);
+}
+
+.tab-btn.active {
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
+}
+
+/* Main Split Panel layout */
+.split-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .split-layout {
+    grid-template-columns: 1.15fr 0.85fr;
+  }
+}
+
+/* Side context card */
+.context-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.context-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--primary-color);
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.talking-points-list {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+
+.talking-points-list li {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}

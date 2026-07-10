@@ -1,0 +1,106 @@
+.demo-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.demo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 16px;
+}
+
+.demo-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.demo-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.demo-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tool-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+}
+
+.tool-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: rgba(31, 95, 171, 0.4);
+}
+
+.tool-card-header {
+  background-color: #f8fafc;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tool-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--primary-color);
+}
+
+.tool-status-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+
+.tool-status-tag.success {
+  background-color: var(--success-bg);
+  color: var(--success-color);
+}
+
+.tool-status-tag.pending {
+  background-color: var(--warning-bg);
+  color: var(--warning-color);
+}
+
+.tool-card-body {
+  padding: 18px;
+}
+
+.json-block {
+  margin: 12px 0 0;
+  background-color: #1e293b;
+  border-radius: 6px;
+  padding: 14px;
+  overflow-x: auto;
+}
+
+.json-block pre {
+  margin: 0;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 12px;
+  color: #f8fafc;
+  line-height: 1.4;
+}
+
+.tool-description {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 0 0 10px;
+}

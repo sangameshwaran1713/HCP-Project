@@ -1,0 +1,148 @@
+.form-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.submit-section {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 20px;
+}
+
+.mic-textarea-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.speech-btn {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  height: 36px;
+  width: 36px;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  background-color: #f8fafc;
+  color: var(--text-secondary);
+}
+
+.speech-btn:hover {
+  background-color: #f1f5f9;
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.speech-btn.listening {
+  background-color: var(--danger-bg);
+  color: var(--danger-color);
+  border-color: var(--danger-color);
+  animation: pulse-red 1.5s infinite;
+}
+
+@keyframes pulse-red {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(240, 68, 56, 0.4);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 8px rgba(240, 68, 56, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(240, 68, 56, 0);
+  }
+}
+
+/* AI Summary Display Panel */
+.ai-summary-panel {
+  background-color: #f8fbff;
+  border: 1px dashed rgba(31, 95, 171, 0.4);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-top: 24px;
+}
+
+.ai-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.ai-summary-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sentiment-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+
+.sentiment-badge.positive {
+  background-color: var(--success-bg);
+  color: var(--success-color);
+}
+
+.sentiment-badge.neutral {
+  background-color: #f2f4f7;
+  color: #344054;
+}
+
+.sentiment-badge.negative {
+  background-color: var(--danger-bg);
+  color: var(--danger-color);
+}
+
+.summary-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 640px) {
+  .insights-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.insight-card {
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.insights-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
