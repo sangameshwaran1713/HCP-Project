@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import LogInteractionScreen from "../components/LogInteractionScreen";
+import { listInteractions } from "../hooks/api";
+import { fetchStart, fetchSuccess, fetchFailure } from "../redux/slices/interactionSlice";
 
 function Dashboard() {
+  const dispatch = useDispatch();
   const { interactions } = useSelector((state) => state.interaction);
   const [stats, setStats] = useState({
     total: 0,
@@ -11,6 +14,21 @@ function Dashboard() {
     negative: 0,
     scheduledFollowups: 0
   });
+
+  useEffect(() => {
+    const loadInitialInteractions = async () => {
+      if (interactions.length === 0) {
+        dispatch(fetchStart());
+        try {
+          const response = await listInteractions();
+          dispatch(fetchSuccess(response.data));
+        } catch (err) {
+          dispatch(fetchFailure("Failed to load interaction stats."));
+        }
+      }
+    };
+    loadInitialInteractions();
+  }, [dispatch, interactions.length]);
 
   useEffect(() => {
     const total = interactions.length;
