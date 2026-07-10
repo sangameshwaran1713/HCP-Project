@@ -131,3 +131,7 @@ graph TD
    * `schedule_followup`: Schedules notifications based on ideal frequencies.
 4. **Database Layer (SQLite):** Stores persistent records for `users`, `hcps` (doctors registry), `interactions`, and representative audit activities.
 
+
+THE PROJECT IS LIVE USE THIS "https://hcp-project-ft-three.vercel.app/"
+
+
