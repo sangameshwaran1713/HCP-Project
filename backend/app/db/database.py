@@ -28,6 +28,26 @@ def init_db():
     Base.metadata.create_all(bind=engine)
     
     db = SessionLocal()
+
+    # Safely alter tables to add new columns if they do not exist
+    try:
+        db.execute("ALTER TABLE hcps ADD COLUMN approved INTEGER DEFAULT 1")
+        db.commit()
+    except Exception:
+        db.rollback()
+
+    try:
+        db.execute("ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1")
+        db.commit()
+    except Exception:
+        db.rollback()
+
+    try:
+        db.execute("ALTER TABLE hcps ADD COLUMN password TEXT DEFAULT 'doctor123'")
+        db.commit()
+    except Exception:
+        db.rollback()
+    
     try:
         seed_hcps = [
             ("Dr. Rajesh Kumar", "Cardiology", "Apollo Hospital", "rajesh.kumar@apollo.com", "+919876543210"),

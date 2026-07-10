@@ -42,3 +42,15 @@ class InteractionPatch(BaseModel):
 
 class FollowupCreate(BaseModel):
     followup_preference: str  # immediate, 1-week, 2-weeks, 1-month
+
+class DoctorLoginRequest(BaseModel):
+    email: str
+    password: str
+
+class HcpCreateRequest(BaseModel):
+    name: str
+    specialty: Optional[str] = ""
+    institution: Optional[str] = ""
+    email: Optional[str] = ""
+    phone: Optional[str] = ""
+    password: Optional[str] = "doctor123"

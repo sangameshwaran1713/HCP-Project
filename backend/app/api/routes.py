@@ -15,7 +15,7 @@ from app.models.interaction import Interaction, ChatMessage, User, UserActivity,
 from app.schemas.interaction import (
     SendOTPRequest, VerifyOTPRequest, AdminLoginRequest, 
     ActivityRequest, ChatRequest, InteractionCreate, 
-    InteractionPatch, FollowupCreate
+    InteractionPatch, FollowupCreate, DoctorLoginRequest, HcpCreateRequest
 )
 from app.agents.hcp_agent import run_agent
 
@@ -66,14 +66,16 @@ def auth_payload(authorization: Optional[str] = Header(default=None)):
 def current_user(payload=Depends(auth_payload), db: Session = Depends(get_db)):
     user_id = payload.get("user_id", 1)
     if user_id == 0:  # Temporary user fallback
-        return User(id=0, name="Temporary User", email="temp@hcp-crm.local")
+        return User(id=0, name="Temporary User", email="temp@hcp-crm.local", is_active=1)
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         # Auto-create user for demo ease
-        user = User(id=1, name="Demo User", email="demo@hcp-crm.local", created_at=datetime.utcnow())
+        user = User(id=1, name="Demo User", email="demo@hcp-crm.local", created_at=datetime.utcnow(), is_active=1)
         db.add(user)
         db.commit()
         db.refresh(user)
+    if getattr(user, "is_active", 1) == 0:
+        raise HTTPException(status_code=403, detail="Representative account is suspended")
     return user
 
 # --- Auth Endpoints ---
@@ -332,3 +334,258 @@ def tools_demo_endpoint(db: Session = Depends(get_db)):
         "created_hcp_id": hcp_id,
         "log": demo_log
     }
+
+# --- Admin Functionality ---
+def current_admin(payload=Depends(auth_payload)):
+    if payload.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return payload
+
+@router.get("/admin/users")
+def get_users(admin=Depends(current_admin), db: Session = Depends(get_db)):
+    users = db.query(User).order_by(User.created_at.desc()).all()
+    return [
+        {
+            "id": str(user.id),
+            "name": user.name,
+            "email": user.email,
+            "created_at": str(user.created_at or ""),
+            "last_login": str(user.last_login or ""),
+            "is_active": getattr(user, "is_active", 1)
+        }
+        for user in users
+    ]
+
+@router.get("/admin/users/{user_id}/activity")
+def get_user_activity(user_id: int, admin=Depends(current_admin), db: Session = Depends(get_db)):
+    activities = db.query(UserActivity).filter(UserActivity.user_id == user_id).order_by(UserActivity.timestamp.desc()).all()
+    interactions = db.query(Interaction).filter(Interaction.user_id == user_id).order_by(Interaction.created_at.desc()).all()
+    
+    return {
+        "activities": [
+            {
+                "id": str(act.id),
+                "action": act.action,
+                "route": act.route,
+                "timestamp": str(act.timestamp or "")
+            }
+            for act in activities
+        ],
+        "interactions": [
+            {
+                "id": str(item.id),
+                "hcp_name": item.hcp_name,
+                "interaction_type": item.interaction_type,
+                "interaction_date": str(item.interaction_date or ""),
+                "topics_discussed": item.topics_discussed,
+                "sentiment": item.sentiment or "Neutral",
+                "created_at": str(item.created_at or "")
+            }
+            for item in interactions
+        ]
+    }
+
+@router.put("/admin/user/{user_id}/toggle-status")
+def toggle_user_status(user_id: int, admin=Depends(current_admin), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Representative not found")
+    user.is_active = 0 if getattr(user, "is_active", 1) != 0 else 1
+    db.commit()
+    return {"status": "success", "is_active": user.is_active}
+
+@router.get("/admin/hcps")
+def get_admin_hcps(admin=Depends(current_admin), db: Session = Depends(get_db)):
+    hcps = db.query(HCP).order_by(HCP.name).all()
+    return [
+        {
+            "id": str(hcp.id),
+            "name": hcp.name,
+            "specialty": hcp.specialty or "",
+            "institution": hcp.institution or "",
+            "email": hcp.email or "",
+            "phone": hcp.phone or "",
+            "approved": getattr(hcp, "approved", 1),
+            "password": getattr(hcp, "password", "doctor123")
+        }
+        for hcp in hcps
+    ]
+
+@router.post("/admin/hcp")
+def create_hcp(payload: HcpCreateRequest, admin=Depends(current_admin), db: Session = Depends(get_db)):
+    if not payload.name.strip():
+        raise HTTPException(status_code=400, detail="Doctor name is required")
+    
+    if payload.email and payload.email.strip():
+        exists = db.query(HCP).filter(HCP.email == payload.email.strip().lower()).first()
+        if exists:
+            raise HTTPException(status_code=400, detail="A doctor with this email is already registered")
+
+    new_hcp = HCP(
+        name=payload.name.strip(),
+        specialty=payload.specialty.strip() if payload.specialty else "",
+        institution=payload.institution.strip() if payload.institution else "",
+        email=payload.email.strip().lower() if payload.email else "",
+        phone=payload.phone.strip() if payload.phone else "",
+        password=payload.password.strip() if payload.password else "doctor123",
+        approved=1
+    )
+    db.add(new_hcp)
+    db.commit()
+    db.refresh(new_hcp)
+    return {"status": "success", "doctor": {"id": str(new_hcp.id), "name": new_hcp.name}}
+
+@router.put("/admin/hcp/{hcp_id}/toggle-approval")
+def toggle_hcp_approval(hcp_id: int, admin=Depends(current_admin), db: Session = Depends(get_db)):
+    hcp = db.query(HCP).filter(HCP.id == hcp_id).first()
+    if not hcp:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    hcp.approved = 0 if getattr(hcp, "approved", 1) != 0 else 1
+    db.commit()
+    return {"status": "success", "approved": hcp.approved}
+
+@router.put("/admin/hcp/{hcp_id}")
+def admin_update_hcp(hcp_id: int, payload: HcpCreateRequest, admin=Depends(current_admin), db: Session = Depends(get_db)):
+    hcp = db.query(HCP).filter(HCP.id == hcp_id).first()
+    if not hcp:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    
+    if payload.name.strip():
+        hcp.name = payload.name.strip()
+    if payload.specialty is not None:
+        hcp.specialty = payload.specialty.strip()
+    if payload.institution is not None:
+        hcp.institution = payload.institution.strip()
+    if payload.email is not None:
+        email_val = payload.email.strip().lower()
+        if email_val != hcp.email:
+            exists = db.query(HCP).filter(HCP.email == email_val).first()
+            if exists:
+                raise HTTPException(status_code=400, detail="Another doctor with this email is already registered")
+            hcp.email = email_val
+    if payload.phone is not None:
+        hcp.phone = payload.phone.strip()
+    if payload.password is not None and payload.password.strip():
+        hcp.password = payload.password.strip()
+        
+    db.commit()
+    db.refresh(hcp)
+    return {"status": "success", "doctor": {"id": str(hcp.id), "name": hcp.name}}
+
+# --- Doctor Portal Auth & Endpoints ---
+@router.post("/auth/doctor-login")
+def doctor_login(payload: DoctorLoginRequest, db: Session = Depends(get_db)):
+    email = payload.email.strip().lower()
+    hcp = db.query(HCP).filter(HCP.email == email).first()
+    if not hcp:
+        raise HTTPException(status_code=404, detail="Doctor profile not found. Please contact supervisor.")
+    if getattr(hcp, "approved", 1) == 0:
+        raise HTTPException(status_code=403, detail="Doctor access is suspended. Please contact supervisor.")
+    
+    # Validate password
+    expected_password = getattr(hcp, "password", "doctor123")
+    if payload.password != expected_password:
+        raise HTTPException(status_code=401, detail="Incorrect password.")
+        
+    token = create_token({"role": "doctor", "hcp_id": hcp.id})
+    return {"token": token, "role": "doctor", "name": hcp.name}
+
+@router.get("/api/doctor/profile")
+def get_doctor_profile(payload=Depends(auth_payload), db: Session = Depends(get_db)):
+    if payload.get("role") != "doctor":
+        raise HTTPException(status_code=403, detail="Doctor access required")
+    hcp_id = payload.get("hcp_id")
+    hcp = db.query(HCP).filter(HCP.id == hcp_id).first()
+    if not hcp:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    return {
+        "id": str(hcp.id),
+        "name": hcp.name,
+        "specialty": hcp.specialty or "",
+        "institution": hcp.institution or "",
+        "email": hcp.email or "",
+        "phone": hcp.phone or ""
+    }
+
+@router.get("/api/doctor/interactions")
+def get_doctor_interactions(payload=Depends(auth_payload), db: Session = Depends(get_db)):
+    if payload.get("role") != "doctor":
+        raise HTTPException(status_code=403, detail="Doctor access required")
+    hcp_id = payload.get("hcp_id")
+    interactions = db.query(Interaction).filter(Interaction.hcp_id == hcp_id).order_by(Interaction.created_at.desc()).all()
+    
+    result = []
+    for item in interactions:
+        rep_name = "System"
+        if item.user_id:
+            rep = db.query(User).filter(User.id == item.user_id).first()
+            if rep:
+                rep_name = rep.name
+                
+        result.append({
+            "id": str(item.id),
+            "rep_name": rep_name,
+            "interaction_type": item.interaction_type or "Meeting",
+            "interaction_date": str(item.interaction_date or ""),
+            "interaction_time": item.interaction_time.strftime("%H:%M") if item.interaction_time else "",
+            "attendees": item.attendees or "",
+            "topics_discussed": item.topics_discussed or "",
+            "materials_shared": item.materials_shared or "",
+            "samples_distributed": item.samples_distributed or "",
+            "sentiment": item.sentiment or "Neutral",
+            "outcomes": item.outcomes or "",
+            "followup_actions": item.followup_actions or ""
+        })
+    return result
+
+@router.post("/auth/doctor-bypass")
+def doctor_bypass(payload: dict, db: Session = Depends(get_db)):
+    hcp_id = payload.get("hcp_id")
+    if not hcp_id:
+        raise HTTPException(status_code=400, detail="hcp_id is required")
+    hcp = db.query(HCP).filter(HCP.id == hcp_id).first()
+    if not hcp:
+        raise HTTPException(status_code=404, detail="Doctor profile not found")
+    if getattr(hcp, "approved", 1) == 0:
+        raise HTTPException(status_code=403, detail="Doctor access is suspended. Please contact supervisor.")
+    token = create_token({"role": "doctor", "hcp_id": hcp.id})
+    return {"token": token, "role": "doctor", "name": hcp.name}
+
+@router.put("/api/doctor/profile")
+def update_doctor_profile(payload: HcpCreateRequest, auth=Depends(auth_payload), db: Session = Depends(get_db)):
+    if auth.get("role") != "doctor":
+        raise HTTPException(status_code=403, detail="Doctor access required")
+    hcp_id = auth.get("hcp_id")
+    hcp = db.query(HCP).filter(HCP.id == hcp_id).first()
+    if not hcp:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    
+    if payload.name.strip():
+        hcp.name = payload.name.strip()
+    if payload.specialty is not None:
+        hcp.specialty = payload.specialty.strip()
+    if payload.institution is not None:
+        hcp.institution = payload.institution.strip()
+    if payload.email is not None:
+        hcp.email = payload.email.strip().lower()
+    if payload.phone is not None:
+        hcp.phone = payload.phone.strip()
+        
+    db.commit()
+    db.refresh(hcp)
+    return {
+        "status": "success",
+        "profile": {
+            "id": str(hcp.id),
+            "name": hcp.name,
+            "specialty": hcp.specialty or "",
+            "institution": hcp.institution or "",
+            "email": hcp.email or "",
+            "phone": hcp.phone or ""
+        }
+    }
+
+@router.get("/api/doctor/all-list")
+def get_doctor_all_list(db: Session = Depends(get_db)):
+    hcps = db.query(HCP).filter(HCP.approved != 0).order_by(HCP.name).all()
+    return [{"id": str(hcp.id), "name": hcp.name} for hcp in hcps]

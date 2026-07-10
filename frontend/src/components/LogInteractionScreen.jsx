@@ -4,6 +4,8 @@ import FormInterface from "./FormInterface";
 import ChatInterface from "./ChatInterface";
 import InteractionHistory from "./InteractionHistory";
 import ToolsDemo from "./ToolsDemo";
+import AdminPanel from "./AdminPanel";
+import DoctorPortal from "./DoctorPortal";
 import { retrieveHcpData } from "../hooks/api";
 import { setSelectedHcp } from "../redux/slices/interactionSlice";
 
@@ -13,6 +15,21 @@ function LogInteractionScreen() {
   const [activeTab, setActiveTab] = useState("form");
   const [hcpDetails, setHcpDetails] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
+
+  // Hidden tabs display states
+  const [showAdminTab, setShowAdminTab] = useState(false);
+  const [showDoctorTab, setShowDoctorTab] = useState(false);
+
+  // Parse URL query parameter on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("admin") === "true") {
+      setShowAdminTab(true);
+    }
+    if (params.get("doctor") === "true") {
+      setShowDoctorTab(true);
+    }
+  }, []);
 
   // We can default select a provider for demo ease if none is selected
   useEffect(() => {
@@ -73,6 +90,23 @@ function LogInteractionScreen() {
           >
             🛠️ Tools Demo
           </button>
+          {showAdminTab && (
+            <button 
+              onClick={() => setActiveTab("admin")} 
+              className={`tab-btn ${activeTab === "admin" ? "active" : ""}`}
+            >
+              🔑 Admin Panel
+            </button>
+          )}
+          {showDoctorTab && (
+            <button 
+              onClick={() => setActiveTab("doctor")} 
+              className={`tab-btn ${activeTab === "doctor" ? "active" : ""}`}
+              style={{ color: "#0b7a6d", borderColor: activeTab === "doctor" ? "#0b7a6d" : "var(--border-color)" }}
+            >
+              🩺 Doctor Portal
+            </button>
+          )}
         </div>
       </div>
 
@@ -140,6 +174,8 @@ function LogInteractionScreen() {
         <div style={{ width: "100%" }}>
           {activeTab === "history" && <InteractionHistory />}
           {activeTab === "demo" && <ToolsDemo />}
+          {activeTab === "admin" && <AdminPanel />}
+          {activeTab === "doctor" && <DoctorPortal />}
         </div>
       )}
     </div>

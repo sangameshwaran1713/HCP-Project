@@ -7,9 +7,14 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = config.url && config.url.startsWith("/admin")
-    ? localStorage.getItem("hcp_admin_token")
-    : localStorage.getItem("hcp_crm_token") || localStorage.getItem("hcp_admin_token");
+  let token = null;
+  if (config.url && config.url.startsWith("/admin")) {
+    token = localStorage.getItem("hcp_admin_token");
+  } else if (config.url && config.url.startsWith("/api/doctor")) {
+    token = localStorage.getItem("hcp_doctor_token");
+  } else {
+    token = localStorage.getItem("hcp_crm_token") || localStorage.getItem("hcp_admin_token");
+  }
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -41,5 +46,22 @@ export const runToolsDemo = () => api.get("/api/tools/demo");
 
 // Chat conversational workspace
 export const sendChatMessage = (message, history = []) => api.post("/api/chat", { message, history });
+
+// Admin endpoints
+export const getAdminUsers = () => api.get("/admin/users");
+export const getAdminUserActivity = (userId) => api.get(`/admin/users/${userId}/activity`);
+export const adminCreateHcp = (hcpData) => api.post("/admin/hcp", hcpData);
+export const adminUpdateHcp = (hcpId, hcpData) => api.put(`/admin/hcp/${hcpId}`, hcpData);
+export const adminToggleHcpApproval = (hcpId) => api.put(`/admin/hcp/${hcpId}/toggle-approval`);
+export const adminToggleUserStatus = (userId) => api.put(`/admin/user/${userId}/toggle-status`);
+export const adminListHcps = () => api.get("/admin/hcps");
+
+// Doctor Portal endpoints
+export const doctorLogin = (email, password) => api.post("/auth/doctor-login", { email, password });
+export const getDoctorProfile = () => api.get("/api/doctor/profile");
+export const getDoctorInteractions = () => api.get("/api/doctor/interactions");
+export const doctorBypassLogin = (hcpId) => api.post("/auth/doctor-bypass", { hcp_id: hcpId });
+export const updateDoctorProfile = (hcpData) => api.put("/api/doctor/profile", hcpData);
+export const doctorAllList = () => api.get("/api/doctor/all-list");
 
 export default api;

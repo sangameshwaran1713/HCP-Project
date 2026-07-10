@@ -41,9 +41,9 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
     email = Column(String(255), nullable=False, unique=True, index=True)
+    is_active = Column(Integer, default=1)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login = Column(DateTime)
-
 
 class UserActivity(Base):
     __tablename__ = "user_activity"

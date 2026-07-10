@@ -1,6 +1,13 @@
+# Node dependencies
 node_modules/
 frontend/node_modules/
-backend/__pycache__/
-.envgit add .
-git commit -m "Remove node_modules"
-git push
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment files
+.env
+.env.local
+.env.*

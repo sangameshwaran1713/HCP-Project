@@ -11,4 +11,6 @@ class HCP(Base):
     institution = Column(String(255))
     email = Column(String(255))
     phone = Column(String(50))
+    approved = Column(Integer, default=1)
+    password = Column(String(255), default="doctor123")
     created_at = Column(DateTime, default=datetime.utcnow)
